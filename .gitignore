@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# AWS / secrets
+.bedrock_agentcore/
+dynamo-*.json
+secrets-policy.json
+s3-faq-index-policy.json
+
+# Frontend
+frontend/.next/
+frontend/node_modules/
+frontend/.env.local
+
+# Misc
+uv.lock
