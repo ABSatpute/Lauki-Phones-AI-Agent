@@ -17,3 +17,5 @@ frontend/.env.local
 
 # Misc
 uv.lock
+
+guardrail-*.json
