@@ -21,6 +21,8 @@ ENV/
 
 # Node.js
 node_modules/
+frontend/.next/
+frontend/node_modules/
 
 # Testing
 .pytest_cache/

@@ -48,7 +48,33 @@ def get_dynamo():
     return _dynamo
 
 
-# ── Rate limiting ─────────────────────────────────────────────────────────────
+GUARDRAIL_ID = "fns2hq9ym7zf"
+GUARDRAIL_VERSION = "2"
+
+_bedrock_runtime = None
+def get_bedrock_runtime():
+    global _bedrock_runtime
+    if _bedrock_runtime is None:
+        _bedrock_runtime = boto3.client("bedrock-runtime", region_name=REGION)
+    return _bedrock_runtime
+
+
+def apply_guardrail(text: str) -> tuple[bool, str]:
+    """Returns (blocked, message). If blocked=True, return message to user directly."""
+    try:
+        response = get_bedrock_runtime().apply_guardrail(
+            guardrailIdentifier=GUARDRAIL_ID,
+            guardrailVersion=GUARDRAIL_VERSION,
+            source="INPUT",
+            content=[{"text": {"text": text}}],
+        )
+        if response["action"] == "GUARDRAIL_INTERVENED":
+            outputs = response.get("outputs", [])
+            msg = outputs[0]["text"] if outputs else "I can only help with Lauki Phones telecom queries."
+            return True, msg
+    except Exception as e:
+        print(f"Guardrail error (fail open): {e}")
+    return False, ""
 
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_HOUR", "20"))  # max requests per user per hour
 
@@ -209,6 +235,9 @@ class MemoryMiddleware(AgentMiddleware):
         thread_id = config["configurable"]["thread_id"]
         namespace = (actor_id, thread_id)
         messages = state.get("messages", [])
+        # Trim to last 10 messages to stay within Groq's token limit
+        if len(messages) > 10:
+            messages = messages[-10:]
 
         for msg in reversed(messages):
             if isinstance(msg, HumanMessage):
@@ -252,31 +281,28 @@ class MemoryMiddleware(AgentMiddleware):
 # ── LLM + agent ───────────────────────────────────────────────────────────────
 
 llm = init_chat_model(
-    model="openai/gpt-oss-20b",
+    model="llama-3.3-70b-versatile",
     model_provider="groq",
     api_key=GROQ_API_KEY,
 )
 
 system_prompt = """You are a helpful customer support agent for Lauki Phones, an Indian telecom operator.
 
-You have access to:
-- FAQ knowledge base (plans, billing, network, SIM, roaming, devices, security)
-- Weather tool (for network issues related to weather)
-- Country info tool (for international/roaming queries)
-- Phone number validation tool (for porting requests)
-- Public holidays tool (for SLA and support availability queries)
+You have access to these tools — use them ONLY when relevant:
+- search_faq: for ANY question about plans, billing, network, SIM, roaming, devices, security
+- search_detailed_faq: only if search_faq didn't return enough information
+- reformulate_query: only if the first search returned irrelevant results
+- get_weather_network_impact: ONLY if user explicitly mentions signal/network issues AND provides a city
+- get_country_info: ONLY if user explicitly mentions traveling to or calling a specific country
+- validate_phone_number: ONLY if user provides a phone number for porting
+- check_public_holidays: ONLY if user asks about support availability or billing timelines
 
-Guidelines:
-1. Use search_faq first for any customer question
-2. If the user reports network issues, also use get_weather_network_impact for their city
-3. If the user mentions a country, use get_country_info to enrich your response
-4. If the user wants to port a number, use validate_phone_number first
-5. If the user asks about support timelines or billing cycles, use check_public_holidays
-6. Use the user's profile (plan, preferences) to personalize answers
-7. If frustrated tone is detected, acknowledge it empathetically and offer escalation
-8. If search returns no results, tell the user clearly and suggest contacting support
-
-Always be concise, accurate, and empathetic."""
+Rules:
+- Always start with search_faq
+- Do NOT call weather, country, phone, or holiday tools unless the user's message clearly requires them
+- Use the user's profile (plan, preferences) to personalize answers
+- If frustrated tone detected, acknowledge empathetically and offer escalation
+- Be concise and accurate"""
 
 agent = create_agent(
     model=llm,
@@ -304,6 +330,11 @@ def agent_invocation(payload, context):
             "thread_id": thread_id,
         }
 
+    # Guardrail check — block before hitting LLM
+    blocked, block_msg = apply_guardrail(query)
+    if blocked:
+        return {"result": block_msg, "actor_id": actor_id, "thread_id": thread_id, "blocked": True}
+
     # Sentiment check — bypass cache for frustrated users, flag for escalation
     frustrated = detect_frustration(query)
 
@@ -314,7 +345,6 @@ def agent_invocation(payload, context):
             return {"result": cached, "actor_id": actor_id, "thread_id": thread_id, "cached": True}
 
     config = {"configurable": {"thread_id": thread_id, "actor_id": actor_id}}
-
     result = agent.invoke({"messages": [("human", query)]}, config=config)
 
     messages = result.get("messages", [])
@@ -339,6 +369,7 @@ def agent_invocation(payload, context):
         "thread_id": thread_id,
         "escalation_flagged": frustrated,
         "tools_used": tool_calls_used,
+        "blocked": False,
     }
 
 
