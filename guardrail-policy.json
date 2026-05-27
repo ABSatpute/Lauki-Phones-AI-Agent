@@ -1,8 +1,0 @@
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": "bedrock:ApplyGuardrail",
-    "Resource": "arn:aws:bedrock:us-east-1:417780655467:guardrail/fns2hq9ym7zf"
-  }]
-}

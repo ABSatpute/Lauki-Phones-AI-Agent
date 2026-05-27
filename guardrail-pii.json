@@ -1,7 +1,0 @@
-{
-  "piiEntitiesConfig": [
-    {"type": "EMAIL", "action": "ANONYMIZE"},
-    {"type": "PHONE", "action": "ANONYMIZE"},
-    {"type": "CREDIT_DEBIT_CARD_NUMBER", "action": "BLOCK"}
-  ]
-}
