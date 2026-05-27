@@ -9,6 +9,8 @@ __pycache__/
 dynamo-*.json
 secrets-policy.json
 s3-faq-index-policy.json
+guardrail-*.json
+context*.json
 
 # Frontend
 frontend/.next/
@@ -17,5 +19,3 @@ frontend/.env.local
 
 # Misc
 uv.lock
-
-guardrail-*.json
