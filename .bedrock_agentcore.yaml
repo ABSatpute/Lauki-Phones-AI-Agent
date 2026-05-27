@@ -32,7 +32,7 @@ agents:
     bedrock_agentcore:
       agent_id: Agent_with_memory-96lnExBamr
       agent_arn: arn:aws:bedrock-agentcore:us-east-1:417780655467:runtime/Agent_with_memory-96lnExBamr
-      agent_session_id: a1031779-85f6-4d21-9c3e-4b8f3b833b93
+      agent_session_id: f64d46ce-33db-4bbd-b6ad-f6608d8b98fc
     codebuild:
       project_name: bedrock-agentcore-agent_with_memory-builder
       execution_role: arn:aws:iam::417780655467:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-ab7e989caa

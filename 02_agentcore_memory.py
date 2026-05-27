@@ -31,11 +31,10 @@ def _get_secret(secret_name: str) -> str:
     client = boto3.client("secretsmanager", region_name=REGION)
     return client.get_secret_value(SecretId=secret_name)["SecretString"]
 
-# Fetch at startup — cached for container lifetime
 try:
-    GROQ_API_KEY = _get_secret("lauki-phones/groq-api-key")
+    OPENAI_API_KEY = _get_secret("lauki-phones/openai-api-key")
 except Exception:
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # fallback for local dev
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 checkpointer = AgentCoreMemorySaver(memory_id=MEMORY_ID)
 mem_store = AgentCoreMemoryStore(memory_id=MEMORY_ID)
@@ -68,13 +67,15 @@ def apply_guardrail(text: str) -> tuple[bool, str]:
             source="INPUT",
             content=[{"text": {"text": text}}],
         )
-        if response["action"] == "GUARDRAIL_INTERVENED":
+        action = response.get("action", "NONE")
+        if action == "GUARDRAIL_INTERVENED":
             outputs = response.get("outputs", [])
-            msg = outputs[0]["text"] if outputs else "I can only help with Lauki Phones telecom queries."
+            msg = outputs[0].get("text", "I can only help with Lauki Phones telecom queries.") if outputs else "I can only help with Lauki Phones telecom queries."
             return True, msg
+        return False, ""
     except Exception as e:
         print(f"Guardrail error (fail open): {e}")
-    return False, ""
+        return False, ""
 
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_HOUR", "20"))  # max requests per user per hour
 
@@ -281,9 +282,9 @@ class MemoryMiddleware(AgentMiddleware):
 # ── LLM + agent ───────────────────────────────────────────────────────────────
 
 llm = init_chat_model(
-    model="llama-3.3-70b-versatile",
-    model_provider="groq",
-    api_key=GROQ_API_KEY,
+    model="gpt-4o",
+    model_provider="openai",
+    api_key=OPENAI_API_KEY,
 )
 
 system_prompt = """You are a helpful customer support agent for Lauki Phones, an Indian telecom operator.
