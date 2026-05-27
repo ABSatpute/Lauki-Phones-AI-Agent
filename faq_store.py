@@ -16,7 +16,9 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 REGION = os.getenv("AWS_REGION", "us-east-1")
-ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID", "417780655467")
+ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID")
+if not ACCOUNT_ID:
+    raise ValueError("AWS_ACCOUNT_ID environment variable must be set")
 S3_BUCKET = os.getenv("FAQ_INDEX_BUCKET", f"bedrock-agentcore-faq-index-{ACCOUNT_ID}")
 S3_PREFIX = "faq-index"
 CSV_PATH = os.getenv("FAQ_CSV_PATH", "./lauki_qna.csv")

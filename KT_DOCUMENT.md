@@ -5,7 +5,7 @@
 |---|---|
 | **Project Name** | Lauki Phones AI Agent |
 | **Repository** | https://github.com/ABSatpute/Lauki-Phones-AI-Agent |
-| **AWS Account** | 417780655467 (us-east-1) |
+| **AWS Account** | YOUR_ACCOUNT_ID (us-east-1) |
 | **Backend** | Amazon Bedrock AgentCore — `Agent_with_memory-96lnExBamr` |
 | **Frontend** | Vercel (auto-deploys on push to `main`) |
 | **Document Date** | May 2026 |
@@ -329,7 +329,7 @@ CSV_PATH = "./lauki_qna.csv"  # override: FAQ_CSV_PATH env var
 
 **To update the knowledge base:**
 1. Edit `lauki_qna.csv`
-2. Delete S3 cache: `aws s3 rm s3://bedrock-agentcore-faq-index-417780655467/faq-index/ --recursive`
+2. Delete S3 cache: `aws s3 rm s3://bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID/faq-index/ --recursive`
 3. Deploy — new index builds on first invocation
 
 **CSV format:**
@@ -470,7 +470,7 @@ const opts = aws4.sign({
 | AgentCore Runtime | `Agent_with_memory-96lnExBamr` | project=lauki-phones, env=production |
 | AgentCore Memory | `agentcore_first_project-E1UsbWCIfu` | project=lauki-phones, env=production |
 | ECR Repository | `bedrock-agentcore-agent_with_memory` | project=lauki-phones, env=production |
-| S3 Bucket | `bedrock-agentcore-faq-index-417780655467` | project=lauki-phones, env=production |
+| S3 Bucket | `bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID` | project=lauki-phones, env=production |
 | DynamoDB | `faq-response-cache` | project=lauki-phones, env=production |
 | DynamoDB | `lauki-user-profiles` | project=lauki-phones, env=production |
 | DynamoDB | `lauki-faq-gaps` | project=lauki-phones, env=production |
@@ -481,7 +481,7 @@ const opts = aws4.sign({
 | IAM Role (Runtime) | `AmazonBedrockAgentCoreSDKRuntime-us-east-1-ab7e989caa` | — |
 | IAM Role (Build) | `AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-ab7e989caa` | — |
 | CodeBuild Project | `bedrock-agentcore-agent_with_memory-builder` | — |
-| S3 (CodeBuild) | `bedrock-agentcore-codebuild-sources-417780655467-us-east-1` | — |
+| S3 (CodeBuild) | `bedrock-agentcore-codebuild-sources-YOUR_ACCOUNT_ID-us-east-1` | — |
 
 ### 7.2 IAM Permissions (Runtime Role)
 
@@ -681,7 +681,7 @@ agentcore launch -a Agent_with_memory
 
 **What happens:**
 1. CLI zips project source (excluding patterns in dockerignore template)
-2. Uploads zip to S3: `bedrock-agentcore-codebuild-sources-417780655467-us-east-1`
+2. Uploads zip to S3: `bedrock-agentcore-codebuild-sources-YOUR_ACCOUNT_ID-us-east-1`
 3. CodeBuild builds ARM64 Docker image (~45 seconds)
 4. Image pushed to ECR: `bedrock-agentcore-agent_with_memory`
 5. AgentCore updates runtime with new image
@@ -706,7 +706,7 @@ vercel deploy --prod
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=<IAM user key>
 AWS_SECRET_ACCESS_KEY=<IAM user secret>
-AGENT_ARN=arn:aws:bedrock-agentcore:us-east-1:417780655467:runtime/Agent_with_memory-96lnExBamr
+AGENT_ARN=arn:aws:bedrock-agentcore:us-east-1:YOUR_ACCOUNT_ID:runtime/Agent_with_memory-96lnExBamr
 ```
 
 ### 11.3 First-Time Setup Checklist
@@ -719,7 +719,7 @@ aws dynamodb create-table --table-name lauki-faq-gaps ...
 aws dynamodb create-table --table-name lauki-rate-limits ...
 
 # 2. S3 bucket
-aws s3 mb s3://bedrock-agentcore-faq-index-417780655467 --region us-east-1
+aws s3 mb s3://bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID --region us-east-1
 
 # 3. Secrets
 aws secretsmanager create-secret --name lauki-phones/openai-api-key --secret-string "sk-..."
@@ -772,7 +772,7 @@ git push -u origin feature/your-feature-name
 # CSV format: question,answer (quoted strings)
 
 # 2. Invalidate S3 FAISS cache
-aws s3 rm s3://bedrock-agentcore-faq-index-417780655467/faq-index/ --recursive
+aws s3 rm s3://bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID/faq-index/ --recursive
 
 # 3. Deploy backend
 agentcore launch -a Agent_with_memory
@@ -936,7 +936,7 @@ agentcore invoke '{"prompt":"hello"}'
 | `CACHE_TTL_SECONDS` | Optional env var | `86400` | Cache TTL in seconds (24h) |
 | `FAQ_INDEX_BUCKET` | Optional env var | `bedrock-agentcore-faq-index-{account}` | S3 bucket for FAISS index |
 | `FAQ_CSV_PATH` | Optional env var | `./lauki_qna.csv` | Path to FAQ CSV file |
-| `AWS_ACCOUNT_ID` | Optional env var | `417780655467` | Used in S3 bucket name |
+| `AWS_ACCOUNT_ID` | Optional env var | `YOUR_ACCOUNT_ID` | Used in S3 bucket name |
 
 ### 15.2 Frontend (Vercel Environment Variables)
 
@@ -946,7 +946,7 @@ agentcore invoke '{"prompt":"hello"}'
 | `AWS_ACCESS_KEY_ID` | IAM user key | Must have `bedrock-agentcore:InvokeAgentRuntime` permission |
 | `AWS_SECRET_ACCESS_KEY` | IAM user secret | — |
 | `AWS_SESSION_TOKEN` | Optional | Only for temporary credentials |
-| `AGENT_ARN` | `arn:aws:bedrock-agentcore:us-east-1:417780655467:runtime/Agent_with_memory-96lnExBamr` | Full AgentCore runtime ARN |
+| `AGENT_ARN` | `arn:aws:bedrock-agentcore:us-east-1:YOUR_ACCOUNT_ID:runtime/Agent_with_memory-96lnExBamr` | Full AgentCore runtime ARN |
 
 ---
 
@@ -998,8 +998,8 @@ aws dynamodb delete-table --table-name faq-response-cache --region us-east-1
 # Recreate after deletion (see First-Time Setup)
 
 # ── FAISS INDEX ─────────────────────────────────────────────────
-aws s3 ls s3://bedrock-agentcore-faq-index-417780655467/faq-index/
-aws s3 rm s3://bedrock-agentcore-faq-index-417780655467/faq-index/ --recursive
+aws s3 ls s3://bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID/faq-index/
+aws s3 rm s3://bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID/faq-index/ --recursive
 
 # ── FAQ GAPS ────────────────────────────────────────────────────
 aws dynamodb scan --table-name lauki-faq-gaps --region us-east-1

@@ -144,6 +144,8 @@ aws dynamodb update-time-to-live --table-name lauki-rate-limits \
 aws s3 mb s3://bedrock-agentcore-faq-index-YOUR_ACCOUNT_ID --region us-east-1
 ```
 
+> Set `AWS_ACCOUNT_ID` environment variable to your 12-digit AWS account ID before deploying.
+
 ### 5. Configure and deploy
 
 ```bash
