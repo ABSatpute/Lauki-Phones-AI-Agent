@@ -371,7 +371,6 @@ git push -u origin feature/your-feature
 See [KT_DOCUMENT.md](KT_DOCUMENT.md) for detailed technical documentation.
 
 ---
-
 ## Roadmap
 
 - [ ] Cognito authentication for proper user isolation
